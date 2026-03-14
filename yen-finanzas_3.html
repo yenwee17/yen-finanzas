@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="YenFinanzas">
+<meta name="theme-color" content="#0a0a0f">
+<title>YenFinanzas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0a0a0f;--surface:#111118;--surface2:#1a1a24;--surface3:#22222f;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+  --text:#f0f0f5;--muted:#7070a0;--muted2:#4a4a6a;
+  --green:#00e5a0;--green-dim:rgba(0,229,160,0.12);
+  --red:#ff5566;--red-dim:rgba(255,85,102,0.12);
+  --amber:#ffb830;--amber-dim:rgba(255,184,48,0.12);
+  --blue:#4d9fff;--blue-dim:rgba(77,159,255,0.12);
+  --purple:#a78bfa;--purple-dim:rgba(167,139,250,0.12);
+  --teal:#00d4c8;--teal-dim:rgba(0,212,200,0.12);
+  --font-display:'Syne',sans-serif;--font-mono:'DM Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font-display);overflow:hidden}
+.app{display:flex;flex-direction:column;height:100vh;height:100dvh}
+.topbar{padding:16px 20px 8px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.content{flex:1;overflow-y:auto;overflow-x:hidden;padding:0 16px 100px;-webkit-overflow-scrolling:touch}
+.navbar{position:fixed;bottom:0;left:0;right:0;background:rgba(10,10,15,0.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;padding:8px 0 max(8px,env(safe-area-inset-bottom));z-index:100}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px;cursor:pointer;transition:all 0.2s}
+.nav-icon{font-size:20px;line-height:1}
+.nav-label{font-size:9px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--muted2);transition:color 0.2s}
+.nav-item.active .nav-label{color:var(--green)}
+.nav-item.active .nav-icon{filter:drop-shadow(0 0 6px var(--green))}
+.view{display:none}.view.active{display:block}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:12px}
+.card-accent-green{border-color:rgba(0,229,160,0.2)}
+.card-accent-red{border-color:rgba(255,85,102,0.2)}
+.card-accent-teal{border-color:rgba(0,212,200,0.2)}
+.hero{padding:12px 0 20px}
+.hero-label{font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.hero-amount{font-family:var(--font-mono);font-size:42px;font-weight:300;letter-spacing:-1px;line-height:1}
+.hero-amount.positive{color:var(--green)}.hero-amount.negative{color:var(--red)}.hero-amount.neutral{color:var(--text)}
+.hero-sub{font-size:12px;color:var(--muted);margin-top:6px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px}
+.stat-label{font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.stat-value{font-family:var(--font-mono);font-size:20px;font-weight:400}
+.stat-sub{font-size:11px;color:var(--muted);margin-top:3px}
+.prog-row{margin-bottom:14px}
+.prog-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+.prog-name{font-size:13px;font-weight:500}
+.prog-amounts{font-family:var(--font-mono);font-size:11px;color:var(--muted)}
+.prog-bar{height:5px;background:var(--surface3);border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;border-radius:3px;transition:width 0.6s cubic-bezier(0.4,0,0.2,1)}
+.prog-fill.ok{background:var(--green)}.prog-fill.warn{background:var(--amber)}.prog-fill.over{background:var(--red)}.prog-fill.teal{background:var(--teal)}
+.section-title{font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin:20px 0 10px}
+.tag{display:inline-block;font-size:10px;font-weight:600;letter-spacing:0.05em;padding:2px 8px;border-radius:4px;text-transform:uppercase}
+.tag-reimb{background:var(--green-dim);color:var(--green)}
+.tag-personal{background:var(--red-dim);color:var(--red)}
+.tag-fixed{background:var(--blue-dim);color:var(--blue)}
+.tag-sub{background:var(--purple-dim);color:var(--purple)}
+.tag-income{background:var(--teal-dim);color:var(--teal)}
+.tag-reembolso{background:var(--green-dim);color:var(--green)}
+.tx-row{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--border)}
+.tx-row:last-child{border-bottom:none}
+.tx-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.tx-info{flex:1;min-width:0}
+.tx-desc{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tx-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.tx-amount{font-family:var(--font-mono);font-size:14px;font-weight:400;text-align:right;flex-shrink:0}
+.tx-amount.income{color:var(--teal)}.tx-amount.reimb{color:var(--green)}.tx-amount.personal{color:var(--text)}.tx-amount.fees{color:var(--amber)}
+.sub-row{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+.sub-row:last-child{border-bottom:none}
+.alert{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border-radius:12px;margin-bottom:10px}
+.alert-icon{font-size:16px;flex-shrink:0;margin-top:1px}
+.alert-text{font-size:13px;line-height:1.4}
+.alert-text strong{font-weight:600}
+.alert-warn{background:var(--amber-dim);border:1px solid rgba(255,184,48,0.2)}
+.alert-red{background:var(--red-dim);border:1px solid rgba(255,85,102,0.2)}
+.alert-green{background:var(--green-dim);border:1px solid rgba(0,229,160,0.2)}
+.alert-teal{background:var(--teal-dim);border:1px solid rgba(0,212,200,0.2)}
+.budget-row{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--border)}
+.budget-row:last-child{border-bottom:none}
+.budget-label{font-size:13px;flex:1}
+.budget-input{font-family:var(--font-mono);font-size:14px;width:110px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;color:var(--text);padding:6px 10px;text-align:right;outline:none}
+.budget-input:focus{border-color:var(--green)}
+.add-btn{position:fixed;bottom:74px;right:20px;width:52px;height:52px;border-radius:50%;background:var(--green);border:none;color:#000;font-size:26px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:99;box-shadow:0 4px 20px rgba(0,229,160,0.4);transition:transform 0.15s}
+.add-btn:active{transform:scale(0.93)}
+.add-income-btn{position:fixed;bottom:74px;right:82px;width:52px;height:52px;border-radius:50%;background:var(--teal);border:none;color:#000;font-size:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:99;box-shadow:0 4px 20px rgba(0,212,200,0.3);transition:transform 0.15s}
+.add-income-btn:active{transform:scale(0.93)}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);z-index:200;align-items:flex-end}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:20px 20px 0 0;padding:20px;width:100%;padding-bottom:max(20px,env(safe-area-inset-bottom))}
+.modal-title{font-size:16px;font-weight:700;margin-bottom:16px}
+.form-group{margin-bottom:14px}
+.form-label{font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;display:block}
+.form-input{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-family:var(--font-display);font-size:15px;padding:11px 14px;outline:none}
+.form-input:focus{border-color:var(--green)}
+.form-select{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-family:var(--font-display);font-size:15px;padding:11px 14px;outline:none;appearance:none}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn-primary{width:100%;background:var(--green);color:#000;font-family:var(--font-display);font-size:15px;font-weight:700;padding:14px;border-radius:12px;border:none;cursor:pointer;margin-top:4px}
+.btn-primary-teal{width:100%;background:var(--teal);color:#000;font-family:var(--font-display);font-size:15px;font-weight:700;padding:14px;border-radius:12px;border:none;cursor:pointer;margin-top:4px}
+.btn-cancel{width:100%;background:var(--surface2);color:var(--muted);font-family:var(--font-display);font-size:14px;padding:12px;border-radius:12px;border:none;cursor:pointer;margin-top:8px}
+.report-trip{background:var(--surface2);border-radius:12px;padding:14px;margin-bottom:8px}
+.report-trip-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.report-trip-title{font-size:14px;font-weight:600}
+.report-trip-total{font-family:var(--font-mono);font-size:14px;color:var(--green)}
+.report-item{display:flex;justify-content:space-between;padding:4px 0;font-size:12px;color:var(--muted);border-bottom:1px solid var(--border)}
+.report-item:last-child{border-bottom:none}
+.export-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:12px;color:var(--text);font-family:var(--font-display);font-size:14px;font-weight:600;padding:13px;cursor:pointer;margin-bottom:10px}
+.month-pills{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:4px;scrollbar-width:none}
+.month-pills::-webkit-scrollbar{display:none}
+.month-pill{flex-shrink:0;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;border:1px solid var(--border2);color:var(--muted);cursor:pointer;transition:all 0.15s;white-space:nowrap}
+.month-pill.active{background:var(--green);color:#000;border-color:var(--green)}
+/* Didi pending badge */
+.pending-badge{display:inline-flex;align-items:center;gap:4px;background:var(--amber-dim);color:var(--amber);font-size:11px;font-weight:600;padding:3px 8px;border-radius:4px}
+.received-badge{display:inline-flex;align-items:center;gap:4px;background:var(--green-dim);color:var(--green);font-size:11px;font-weight:600;padding:3px 8px;border-radius:4px}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div>
+      <div style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted)">YEN FINANZAS</div>
+      <div style="font-size:15px;font-weight:700" id="topbar-month"></div>
+    </div>
+    <div style="font-size:22px;cursor:pointer" onclick="showView('settings')">⚙️</div>
+  </div>
+
+  <div class="content">
+
+    <!-- HOME -->
+    <div class="view active" id="view-home">
+      <div class="hero">
+        <div class="hero-label">Disponible este mes</div>
+        <div class="hero-amount positive" id="hero-available">$0</div>
+        <div class="hero-sub" id="hero-sub"></div>
+      </div>
+      <div id="alerts-container"></div>
+      <div class="grid2">
+        <div class="stat-card">
+          <div class="stat-label">Ingresos reales</div>
+          <div class="stat-value" style="color:var(--teal)" id="stat-income-real">$0</div>
+          <div class="stat-sub" id="stat-income-sub">este mes</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Gastado</div>
+          <div class="stat-value" id="stat-spent">$0</div>
+          <div class="stat-sub" id="stat-spent-pct"></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Reembolsable</div>
+          <div class="stat-value" style="color:var(--green)" id="stat-reimb">$0</div>
+          <div class="stat-sub">pendiente DiDi</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Ahorro real</div>
+          <div class="stat-value" id="stat-saving">$0</div>
+          <div class="stat-sub" id="stat-saving-sub"></div>
+        </div>
+      </div>
+      <div class="section-title">Presupuestos del mes</div>
+      <div class="card" id="budgets-overview"></div>
+      <div class="section-title">Últimos movimientos</div>
+      <div class="card" id="recent-txs"></div>
+    </div>
+
+    <!-- INGRESOS -->
+    <div class="view" id="view-ingresos">
+      <div class="section-title" style="margin-top:12px">Resumen ingresos</div>
+      <div class="grid3">
+        <div class="stat-card">
+          <div class="stat-label">Sueldo</div>
+          <div class="stat-value" style="color:var(--teal)" id="ing-sueldo">$0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Reembolsos</div>
+          <div class="stat-value" style="color:var(--green)" id="ing-reimb">$0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Otros</div>
+          <div class="stat-value" style="color:var(--purple)" id="ing-otros">$0</div>
+        </div>
+      </div>
+
+      <div class="section-title">Reembolsos DiDi</div>
+      <div class="card card-accent-teal" id="didi-reimb-status"></div>
+
+      <div class="section-title">Todos los ingresos</div>
+      <div class="month-pills" id="ing-month-pills"></div>
+      <div class="card" id="all-incomes"></div>
+    </div>
+
+    <!-- GASTOS -->
+    <div class="view" id="view-gastos">
+      <div class="section-title" style="margin-top:12px">Período</div>
+      <div class="month-pills" id="month-pills"></div>
+      <div class="grid2" style="margin-top:12px">
+        <div class="stat-card">
+          <div class="stat-label">Personal</div>
+          <div class="stat-value" id="g-personal">$0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Reembolsable</div>
+          <div class="stat-value" style="color:var(--green)" id="g-reimb">$0</div>
+        </div>
+      </div>
+      <div class="section-title">Todos los movimientos</div>
+      <div class="card" id="all-txs"></div>
+    </div>
+
+    <!-- SUSCRIPCIONES -->
+    <div class="view" id="view-subs">
+      <div class="section-title" style="margin-top:12px">Suscripciones activas</div>
+      <div class="card" id="subs-list"></div>
+      <div class="section-title">Próximos cobros (7 días)</div>
+      <div id="upcoming-subs"></div>
+      <div class="grid2">
+        <div class="stat-card">
+          <div class="stat-label">Al mes</div>
+          <div class="stat-value" style="color:var(--purple)" id="subs-monthly">$0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Al año</div>
+          <div class="stat-value" style="color:var(--purple)" id="subs-yearly">$0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DIDI REPORT -->
+    <div class="view" id="view-didi">
+      <div class="section-title" style="margin-top:12px">Reporte reembolso DiDi</div>
+      <div id="didi-trips"></div>
+      <div class="section-title">Acciones</div>
+      <button class="export-btn" onclick="copyDidiReport()">📋 Copiar resumen para RRHH</button>
+      <button class="export-btn" onclick="alert('Disponible con backend')">📧 Enviar por email</button>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="view" id="view-settings">
+      <div class="section-title" style="margin-top:12px">Sueldo e ingresos</div>
+      <div class="card">
+        <div class="budget-row">
+          <div class="budget-label">Sueldo neto mensual base</div>
+          <input class="budget-input" id="set-income" value="3500000" onchange="saveSettings()">
+        </div>
+        <div class="budget-row">
+          <div class="budget-label">Meta de ahorro mensual</div>
+          <input class="budget-input" id="set-savings-goal" value="500000" onchange="saveSettings()">
+        </div>
+      </div>
+      <div class="section-title">Presupuestos mensuales</div>
+      <div class="card" id="budget-settings"></div>
+      <div class="section-title">Suscripciones</div>
+      <div class="card" id="subs-settings"></div>
+      <button class="export-btn" style="margin-top:8px" onclick="addSubModal()">+ Agregar suscripción</button>
+      <div class="section-title">Datos</div>
+      <button class="export-btn" onclick="exportData()">💾 Exportar JSON</button>
+      <button class="export-btn" onclick="if(confirm('¿Borrar todos los datos?'))resetData()">🗑️ Resetear</button>
+    </div>
+
+  </div><!-- /content -->
+
+  <nav class="navbar">
+    <div class="nav-item active" id="nav-home" onclick="showView('home')">
+      <div class="nav-icon">◈</div><div class="nav-label">Inicio</div>
+    </div>
+    <div class="nav-item" id="nav-ingresos" onclick="showView('ingresos')">
+      <div class="nav-icon">↑</div><div class="nav-label">Ingresos</div>
+    </div>
+    <div class="nav-item" id="nav-gastos" onclick="showView('gastos')">
+      <div class="nav-icon">◎</div><div class="nav-label">Gastos</div>
+    </div>
+    <div class="nav-item" id="nav-subs" onclick="showView('subs')">
+      <div class="nav-icon">↻</div><div class="nav-label">Suscr.</div>
+    </div>
+    <div class="nav-item" id="nav-didi" onclick="showView('didi')">
+      <div class="nav-icon">⬡</div><div class="nav-label">DiDi</div>
+    </div>
+  </nav>
+</div>
+
+<!-- FAB buttons -->
+<button class="add-income-btn" id="fab-income" onclick="openIncomeModal()" title="Registrar ingreso" style="display:none">↑</button>
+<button class="add-btn" onclick="openAddModal()">+</button>
+
+<!-- Add expense modal -->
+<div class="modal-overlay" id="add-modal">
+  <div class="modal">
+    <div class="modal-title">➖ Nuevo gasto</div>
+    <div class="form-group">
+      <label class="form-label">Descripción</label>
+      <input class="form-input" id="add-desc" placeholder="ej: Almuerzo cliente BA">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Monto (CLP)</label>
+        <input class="form-input" id="add-amount" type="number" placeholder="15000">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Fecha</label>
+        <input class="form-input" id="add-date" type="date">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Categoría</label>
+      <select class="form-select" id="add-category">
+        <option value="comida-personal">Comida personal</option>
+        <option value="transporte">Transporte Santiago</option>
+        <option value="hogar">Hogar</option>
+        <option value="ocio">Ocio / salidas</option>
+        <option value="suscripciones">Suscripciones</option>
+        <option value="hipoteca">Hipoteca</option>
+        <option value="didi-vuelo">DiDi — Vuelo</option>
+        <option value="didi-hotel">DiDi — Hotel</option>
+        <option value="didi-comida">DiDi — Comida viaje</option>
+        <option value="didi-transporte">DiDi — Transporte viaje</option>
+        <option value="didi-otro">DiDi — Otro reembolsable</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Tipo</label>
+      <select class="form-select" id="add-type">
+        <option value="personal">Personal</option>
+        <option value="reimb">Reembolsable DiDi</option>
+        <option value="fixed">Gasto fijo</option>
+      </select>
+    </div>
+    <button class="btn-primary" onclick="addTransaction()">Registrar gasto</button>
+    <button class="btn-cancel" onclick="closeModal('add-modal')">Cancelar</button>
+  </div>
+</div>
+
+<!-- Add income modal -->
+<div class="modal-overlay" id="income-modal">
+  <div class="modal">
+    <div class="modal-title">↑ Nuevo ingreso</div>
+    <div class="form-group">
+      <label class="form-label">Descripción</label>
+      <input class="form-input" id="inc-desc" placeholder="ej: Sueldo marzo, Reembolso DiDi">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Monto (CLP)</label>
+        <input class="form-input" id="inc-amount" type="number" placeholder="3500000">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Fecha</label>
+        <input class="form-input" id="inc-date" type="date">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Tipo</label>
+      <select class="form-select" id="inc-type">
+        <option value="sueldo">Sueldo</option>
+        <option value="reembolso-didi">Reembolso DiDi</option>
+        <option value="freelance">Freelance / extra</option>
+        <option value="otro">Otro ingreso</option>
+      </select>
+    </div>
+    <div class="form-group" id="inc-trip-group" style="display:none">
+      <label class="form-label">¿A qué viaje corresponde?</label>
+      <select class="form-select" id="inc-trip"></select>
+    </div>
+    <button class="btn-primary-teal" onclick="addIncome()">Registrar ingreso</button>
+    <button class="btn-cancel" onclick="closeModal('income-modal')">Cancelar</button>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+// CONSTANTS
+// ═══════════════════════════════════════
+const DEFAULT_SETTINGS = {
+  income: 3500000,
+  savingsGoal: 500000,
+  budgets: {
+    hipoteca:        { label:'Hipoteca',          amount:1200000, icon:'🏠', type:'fixed'    },
+    cuentas:         { label:'Cuentas hogar',      amount:100000,  icon:'💡', type:'fixed'    },
+    transporte:      { label:'Transporte Stgo',    amount:30000,   icon:'🚗', type:'personal' },
+    'comida-personal':{ label:'Comida personal',   amount:90000,   icon:'🍽', type:'personal' },
+    ocio:            { label:'Ocio / salidas',      amount:50000,   icon:'🎭', type:'personal' },
+    suscripciones:   { label:'Suscripciones',      amount:55000,   icon:'📱', type:'personal' },
+    hogar:           { label:'Otros hogar',         amount:40000,   icon:'🛒', type:'personal' },
+  }
+};
+
+const DEFAULT_SUBS = [
+  { id:'s1', name:'Grammarly', amount:144*950, day:14, currency:'USD', amountOrig:144 },
+  { id:'s2', name:'theliven.com', amount:41000, day:9, currency:'USD', amountOrig:39.99 },
+  { id:'s3', name:'Google Play / YouTube', amount:7700, day:24, currency:'CLP' },
+];
+
+const DIDI_HISTORY = [
+  { id:'t1', trip:'Buenos Aires — Ene 2025',    dates:'15–21 ene', total:881394,  received:0 },
+  { id:'t2', trip:'Posadas / Corrientes — Feb 2025', dates:'21–23 ene', total:230652, received:0 },
+  { id:'t3', trip:'Bogotá Colombia — Mar 2025', dates:'9–16 mar',  total:1112726, received:0 },
+  { id:'t4', trip:'Buenos Aires — Jul 2025',    dates:'9 jul',     total:838482,  received:0 },
+  { id:'t5', trip:'Buenos Aires — Ago 2025',    dates:'13–23 ago', total:405413,  received:0 },
+  { id:'t6', trip:'Buenos Aires — Sep 2025',    dates:'15–16 sep', total:2157550, received:0 },
+  { id:'t7', trip:'Buenos Aires — Ene 2026',    dates:'5–25 ene',  total:1617000, received:0 },
+  { id:'t8', trip:'Buenos Aires — Feb 2026',    dates:'25–30 ene', total:28478,   received:0 },
+];
+
+// ═══════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════
+function loadData() {
+  try {
+    const s = localStorage.getItem('yenfinanzas_v2');
+    if (s) return JSON.parse(s);
+  } catch(e){}
+  return {
+    settings: { ...DEFAULT_SETTINGS },
+    subs: JSON.parse(JSON.stringify(DEFAULT_SUBS)),
+    transactions: [],
+    incomes: [],
+    diditripStatus: JSON.parse(JSON.stringify(DIDI_HISTORY)),
+    version: 2
+  };
+}
+
+function saveData() { localStorage.setItem('yenfinanzas_v2', JSON.stringify(data)); }
+
+let data = loadData();
+if (!data.diditripStatus) data.diditripStatus = JSON.parse(JSON.stringify(DIDI_HISTORY));
+if (!data.incomes) data.incomes = [];
+
+// ═══════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════
+const fmt = n => '$' + Math.round(n).toLocaleString('es-CL');
+const fmtShort = n => n>=1000000 ? '$'+(n/1000000).toFixed(1)+'M' : n>=1000 ? '$'+Math.round(n/1000)+'k' : '$'+Math.round(n);
+const getCurrentMonth = () => { const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; };
+const getMonthTxs = ym => data.transactions.filter(t => t.date && t.date.startsWith(ym));
+const getMonthInc = ym => data.incomes.filter(i => i.date && i.date.startsWith(ym));
+
+function getProgressColor(pct) {
+  if (pct >= 100) return 'over';
+  if (pct >= 80) return 'warn';
+  return 'ok';
+}
+
+function getCatIcon(cat) {
+  const m = { hipoteca:'🏠', cuentas:'💡', transporte:'🚗', 'comida-personal':'🍽',
+    ocio:'🎭', suscripciones:'📱', hogar:'🛒', 'didi-vuelo':'✈️', 'didi-hotel':'🏨',
+    'didi-comida':'🍜', 'didi-transporte':'🚕', 'didi-otro':'💼',
+    sueldo:'💰', 'reembolso-didi':'⬡', freelance:'💻', otro:'💳' };
+  return m[cat] || '💳';
+}
+
+function txRow(t, isIncome) {
+  const icon = getCatIcon(t.category || t.type);
+  const cls = isIncome ? 'income' : (t.type==='reimb' ? 'reimb' : t.type==='fixed' ? 'fees' : 'personal');
+  const sign = isIncome ? '+' : '-';
+  const tagType = isIncome ? (t.type==='reembolso-didi'?'reembolso':'income') : (t.type==='reimb'?'reimb':t.type==='fixed'?'fixed':'personal');
+  const tagLabel = isIncome ? (t.type==='sueldo'?'Sueldo':t.type==='reembolso-didi'?'Reembolso DiDi':t.type==='freelance'?'Freelance':'Ingreso') : (t.type==='reimb'?'Reembolsable':t.type==='fixed'?'Fijo':'Personal');
+  return `<div class="tx-row">
+    <div class="tx-icon" style="background:var(--surface2)">${icon}</div>
+    <div class="tx-info">
+      <div class="tx-desc">${t.desc}</div>
+      <div class="tx-meta">${t.date} · <span class="tag tag-${tagType}">${tagLabel}</span></div>
+    </div>
+    <div class="tx-amount ${cls}">${sign}${fmt(t.amount)}</div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════
+let currentView = 'home';
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('view-'+name)?.classList.add('active');
+  document.getElementById('nav-'+name)?.classList.add('active');
+  currentView = name;
+  // Show income FAB only on ingresos view
+  document.getElementById('fab-income').style.display = name==='ingresos' ? 'flex' : 'none';
+  if (name==='home') renderHome();
+  if (name==='ingresos') renderIngresos();
+  if (name==='gastos') renderGastos();
+  if (name==='subs') renderSubs();
+  if (name==='didi') renderDidi();
+  if (name==='settings') renderSettings();
+  document.querySelector('.content').scrollTop = 0;
+}
+
+// ═══════════════════════════════════════
+// HOME
+// ═══════════════════════════════════════
+function renderHome() {
+  const ym = getCurrentMonth();
+  const txs = getMonthTxs(ym);
+  const incs = getMonthInc(ym);
+  const settings = data.settings || DEFAULT_SETTINGS;
+  const budgets = settings.budgets || DEFAULT_SETTINGS.budgets;
+  const savingsGoal = settings.savingsGoal || 500000;
+  const baseSueldo = settings.income || 3500000;
+
+  // Real incomes this month
+  const realIncome = incs.reduce((s,i) => s+i.amount, 0);
+  // If no income recorded yet, use base salary as reference
+  const effectiveIncome = realIncome > 0 ? realIncome : baseSueldo;
+
+  // Expenses
+  const subsTotal = (data.subs||[]).reduce((s,sub)=>s+sub.amount,0);
+  let totalPersonalSpent = 0, totalReimb = 0, totalFixed = 0;
+  txs.forEach(t => {
+    if (t.type==='reimb') totalReimb += t.amount;
+    else if (t.type==='fixed') totalFixed += t.amount;
+    else totalPersonalSpent += t.amount;
+  });
+  // Add fixed budgets not yet entered as txs
+  const fixedBudgetTotal = Object.values(budgets).filter(b=>b.type==='fixed').reduce((s,b)=>s+b.amount,0);
+  const totalSpent = Math.max(totalFixed, fixedBudgetTotal) + totalPersonalSpent + subsTotal;
+  const available = effectiveIncome - totalSpent;
+  const saving = available;
+
+  // Hero
+  const heroEl = document.getElementById('hero-available');
+  heroEl.textContent = fmt(Math.max(0, available));
+  heroEl.className = 'hero-amount ' + (available >= savingsGoal ? 'positive' : available > 0 ? 'neutral' : 'negative');
+  document.getElementById('hero-sub').textContent =
+    `ingresos ${fmt(effectiveIncome)}${realIncome===0?' (base estimado)':''} · gastado ${fmt(totalSpent)}`;
+
+  // Stats
+  document.getElementById('stat-income-real').textContent = fmt(effectiveIncome);
+  document.getElementById('stat-income-sub').textContent = realIncome>0 ? 'registrado' : 'base estimado';
+  document.getElementById('stat-spent').textContent = fmt(totalSpent);
+  document.getElementById('stat-spent-pct').textContent = Math.round(totalSpent/effectiveIncome*100)+'% del ingreso';
+  document.getElementById('stat-reimb').textContent = fmt(totalReimb);
+  document.getElementById('stat-saving').textContent = fmt(Math.max(0,saving));
+  document.getElementById('stat-saving-sub').textContent = saving >= savingsGoal ? `meta ${fmt(savingsGoal)} ✓` : `meta ${fmt(savingsGoal)}`;
+
+  // Alerts
+  const alerts = [];
+  const today = new Date();
+  (data.subs||[]).forEach(sub => {
+    const days = sub.day - today.getDate();
+    if (days>=0 && days<=5) alerts.push({ type:'warn', msg:`<strong>${sub.name}</strong> cobra en ${days===0?'hoy':days+' días'} — ${fmt(sub.amount)}` });
+  });
+  if (realIncome === 0) alerts.push({ type:'teal', msg:`No has registrado ingresos este mes. Toca <strong>↑</strong> para agregar tu sueldo.` });
+  if (saving < savingsGoal && realIncome > 0) alerts.push({ type:'warn', msg:`Ahorro proyectado <strong>${fmt(Math.max(0,saving))}</strong> bajo tu meta de ${fmt(savingsGoal)}` });
+  if (saving >= savingsGoal && realIncome > 0) alerts.push({ type:'green', msg:`En camino: proyectas ahorrar <strong>${fmt(saving)}</strong> este mes` });
+
+  // DiDi pending alert
+  const pendingDidi = (data.diditripStatus||[]).filter(t=>t.total-t.received>0);
+  if (pendingDidi.length > 0) {
+    const pendingTotal = pendingDidi.reduce((s,t)=>s+(t.total-t.received),0);
+    alerts.push({ type:'teal', msg:`Tienes <strong>${fmt(pendingTotal)}</strong> pendiente de reembolso DiDi (${pendingDidi.length} viaje${pendingDidi.length>1?'s':''})` });
+  }
+
+  const icons = { warn:'⚠️', red:'🔴', green:'✅', teal:'💙' };
+  document.getElementById('alerts-container').innerHTML = alerts.slice(0,4).map(a=>
+    `<div class="alert alert-${a.type}"><div class="alert-icon">${icons[a.type]}</div><div class="alert-text">${a.msg}</div></div>`
+  ).join('');
+
+  // Budget bars
+  const spentBycat = {};
+  txs.forEach(t => { spentBycat[t.category] = (spentBycat[t.category]||0) + t.amount; });
+  spentBycat['suscripciones'] = (spentBycat['suscripciones']||0) + subsTotal;
+
+  let budgetHtml = '';
+  Object.entries(budgets).forEach(([key,b]) => {
+    const spent = b.type==='fixed' ? b.amount : (spentBycat[key]||0);
+    const pct = b.amount>0 ? Math.min(spent/b.amount*100,100) : 0;
+    const color = b.type==='fixed' ? 'teal' : getProgressColor(pct);
+    budgetHtml += `<div class="prog-row">
+      <div class="prog-header">
+        <div class="prog-name">${b.icon} ${b.label}</div>
+        <div class="prog-amounts">${fmtShort(spent)} / ${fmtShort(b.amount)}</div>
+      </div>
+      <div class="prog-bar"><div class="prog-fill ${color}" style="width:${pct}%"></div></div>
+    </div>`;
+  });
+  document.getElementById('budgets-overview').innerHTML = budgetHtml;
+
+  // Recent
+  const allRecent = [
+    ...txs.map(t=>({...t,_isIncome:false})),
+    ...incs.map(i=>({...i,_isIncome:true}))
+  ].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,6);
+
+  document.getElementById('recent-txs').innerHTML = allRecent.length===0
+    ? `<div style="text-align:center;color:var(--muted);padding:20px;font-size:13px">Sin movimientos. Toca + para agregar.</div>`
+    : allRecent.map(t=>txRow(t,t._isIncome)).join('');
+}
+
+// ═══════════════════════════════════════
+// INGRESOS
+// ═══════════════════════════════════════
+let selectedIngMonth = getCurrentMonth();
+
+function renderIngresos() {
+  const ym = selectedIngMonth;
+  const incs = getMonthInc(ym);
+
+  const sueldo = incs.filter(i=>i.type==='sueldo').reduce((s,i)=>s+i.amount,0);
+  const reimb = incs.filter(i=>i.type==='reembolso-didi').reduce((s,i)=>s+i.amount,0);
+  const otros = incs.filter(i=>i.type!=='sueldo'&&i.type!=='reembolso-didi').reduce((s,i)=>s+i.amount,0);
+
+  document.getElementById('ing-sueldo').textContent = fmt(sueldo||0);
+  document.getElementById('ing-reimb').textContent = fmt(reimb||0);
+  document.getElementById('ing-otros').textContent = fmt(otros||0);
+
+  // DiDi reimbursement status
+  const trips = data.diditripStatus||[];
+  const totalPending = trips.reduce((s,t)=>s+(t.total-t.received),0);
+  const totalReceived = trips.reduce((s,t)=>s+t.received,0);
+  const totalAll = trips.reduce((s,t)=>s+t.total,0);
+
+  document.getElementById('didi-reimb-status').innerHTML = `
+    <div class="prog-row" style="margin-bottom:16px">
+      <div class="prog-header">
+        <div class="prog-name">Reembolsos DiDi recibidos</div>
+        <div class="prog-amounts">${fmt(totalReceived)} / ${fmt(totalAll)}</div>
+      </div>
+      <div class="prog-bar" style="height:8px"><div class="prog-fill ok" style="width:${totalAll>0?Math.min(totalReceived/totalAll*100,100):0}%"></div></div>
+    </div>
+    ${trips.map(t => {
+      const pending = t.total - t.received;
+      const pct = Math.min(t.received/t.total*100,100);
+      return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.trip}</div>
+          <div style="height:3px;background:var(--surface3);border-radius:2px;margin-top:5px;overflow:hidden">
+            <div style="height:100%;width:${pct}%;background:${pct>=100?'var(--green)':'var(--amber)'};border-radius:2px"></div>
+          </div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          ${pending>0
+            ? `<div class="pending-badge">⏳ ${fmtShort(pending)}</div>`
+            : `<div class="received-badge">✓ Cobrado</div>`}
+        </div>
+        ${pending>0 ? `<button onclick="markTripReceived('${t.id}')" style="background:var(--green-dim);color:var(--green);border:none;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;flex-shrink:0">Marcar cobrado</button>` : ''}
+      </div>`;
+    }).join('')}
+    <div style="display:flex;justify-content:space-between;padding-top:12px;font-size:13px">
+      <span style="color:var(--muted)">Pendiente total</span>
+      <span style="font-family:var(--font-mono);color:var(--amber);font-weight:500">${fmt(totalPending)}</span>
+    </div>`;
+
+  // Month pills
+  const months = [];
+  const now = new Date();
+  for (let i=5;i>=0;i--) {
+    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+    const m = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    months.push({ ym:m, label:d.toLocaleDateString('es-CL',{month:'short',year:'2-digit'}) });
+  }
+  document.getElementById('ing-month-pills').innerHTML = months.map(m=>
+    `<div class="month-pill ${m.ym===selectedIngMonth?'active':''}" onclick="selectIngMonth('${m.ym}')">${m.label}</div>`
+  ).join('');
+
+  const sorted = [...incs].sort((a,b)=>b.date.localeCompare(a.date));
+  document.getElementById('all-incomes').innerHTML = sorted.length===0
+    ? `<div style="text-align:center;color:var(--muted);padding:20px;font-size:13px">Sin ingresos este mes.<br>Toca ↑ para agregar.</div>`
+    : sorted.map(i=>txRow(i,true)).join('');
+}
+
+function selectIngMonth(ym) { selectedIngMonth=ym; renderIngresos(); }
+
+function markTripReceived(id) {
+  const trip = data.diditripStatus.find(t=>t.id===id);
+  if (!trip) return;
+  const custom = prompt(`¿Cuánto recibiste de "${trip.trip}"? (vacío = monto completo ${fmt(trip.total)})`);
+  const amt = custom ? (parseInt(custom)||trip.total) : trip.total;
+  trip.received = Math.min(trip.total, (trip.received||0) + amt);
+  // Auto-register as income
+  data.incomes.push({
+    id:'i'+Date.now(), desc:`Reembolso DiDi — ${trip.trip}`,
+    amount:amt, date:new Date().toISOString().split('T')[0],
+    type:'reembolso-didi', tripId:id
+  });
+  saveData();
+  renderIngresos();
+  if (currentView==='home') renderHome();
+}
+
+// ═══════════════════════════════════════
+// GASTOS
+// ═══════════════════════════════════════
+let selectedMonth = getCurrentMonth();
+
+function renderGastos() {
+  const months = [];
+  const now = new Date();
+  for (let i=5;i>=0;i--) {
+    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+    const ym = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    months.push({ ym, label:d.toLocaleDateString('es-CL',{month:'short',year:'2-digit'}) });
+  }
+  document.getElementById('month-pills').innerHTML = months.map(m=>
+    `<div class="month-pill ${m.ym===selectedMonth?'active':''}" onclick="selectMonth('${m.ym}')">${m.label}</div>`
+  ).join('');
+
+  const txs = getMonthTxs(selectedMonth);
+  document.getElementById('g-personal').textContent = fmt(txs.filter(t=>t.type!=='reimb').reduce((s,t)=>s+t.amount,0));
+  document.getElementById('g-reimb').textContent = fmt(txs.filter(t=>t.type==='reimb').reduce((s,t)=>s+t.amount,0));
+  const sorted = [...txs].sort((a,b)=>b.date.localeCompare(a.date));
+  document.getElementById('all-txs').innerHTML = sorted.length===0
+    ? `<div style="text-align:center;color:var(--muted);padding:20px;font-size:13px">Sin movimientos.</div>`
+    : sorted.map(t=>txRow(t,false)).join('');
+}
+
+function selectMonth(ym) { selectedMonth=ym; renderGastos(); }
+
+// ═══════════════════════════════════════
+// SUBS
+// ═══════════════════════════════════════
+function renderSubs() {
+  const subs = data.subs||[];
+  document.getElementById('subs-list').innerHTML = subs.length===0
+    ? `<div style="text-align:center;color:var(--muted);padding:20px;font-size:13px">Sin suscripciones.</div>`
+    : subs.map(s=>`<div class="sub-row">
+        <div style="width:8px;height:8px;border-radius:50%;background:var(--purple);flex-shrink:0"></div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:500">${s.name}</div>
+          <div style="font-size:11px;color:var(--muted)">Día ${s.day}${s.currency==='USD'?' · USD '+s.amountOrig:''}</div>
+        </div>
+        <div>
+          <div style="font-family:var(--font-mono);font-size:13px;color:var(--purple)">${fmt(s.amount)}</div>
+          <div style="font-size:10px;color:var(--muted);text-align:right">/mes</div>
+        </div>
+      </div>`).join('');
+
+  const today = new Date();
+  const upcoming = subs.filter(s=>{ const d=s.day-today.getDate(); return d>=0&&d<=7; });
+  document.getElementById('upcoming-subs').innerHTML = upcoming.length===0
+    ? `<div class="card" style="color:var(--muted);font-size:13px">Sin cobros en los próximos 7 días</div>`
+    : upcoming.map(s=>{ const d=s.day-today.getDate();
+        return `<div class="alert alert-warn"><div class="alert-icon">⏰</div><div class="alert-text"><strong>${s.name}</strong> cobra ${d===0?'hoy':`en ${d} día${d>1?'s':''}`} — ${fmt(s.amount)}</div></div>`;
+      }).join('');
+
+  const monthly = subs.reduce((s,sub)=>s+sub.amount,0);
+  document.getElementById('subs-monthly').textContent = fmt(monthly);
+  document.getElementById('subs-yearly').textContent = fmt(monthly*12);
+}
+
+// ═══════════════════════════════════════
+// DIDI REPORT
+// ═══════════════════════════════════════
+const DIDI_DETAIL = [
+  { id:'t1', trip:'Buenos Aires — Ene 2025', dates:'15–21 ene', total:881394, items:[{desc:'Vuelos LATAM + Aerolineas',amt:815817},{desc:'Hotel Amerian',amt:77588},{desc:'HolaFly SIM',amt:30821},{desc:'Comidas trabajo',amt:96631}]},
+  { id:'t2', trip:'Posadas / Corrientes — Feb 2025', dates:'21–23 ene', total:230652, items:[{desc:'Hotel Batista',amt:177711},{desc:'Comidas trabajo',amt:52941}]},
+  { id:'t3', trip:'Bogotá Colombia — Mar 2025', dates:'9–16 mar', total:1112726, items:[{desc:'Vuelo LATAM Stgo-BOG',amt:526532},{desc:'Hotel Casa Dann Carlton',amt:431623},{desc:'HolaFly SIM',amt:27817},{desc:'Didi Bogotá + comidas',amt:126774}]},
+  { id:'t4', trip:'Buenos Aires — Jul 2025', dates:'9 jul', total:838482, items:[{desc:'Vuelos LATAM + Porter',amt:749405},{desc:'Seguro viaje',amt:89077}]},
+  { id:'t5', trip:'Buenos Aires — Ago 2025', dates:'13–23 ago', total:405413, items:[{desc:'JetSmart',amt:187388},{desc:'LATAM cuotas x2',amt:159720},{desc:'Didi BA',amt:58305}]},
+  { id:'t6', trip:'Buenos Aires — Sep 2025', dates:'15–16 sep', total:2157550, items:[{desc:'Vuelos LATAM x2',amt:1699596},{desc:'Aerolineas x3',amt:537080},{desc:'Cuotas vuelos previos',amt:217963}]},
+  { id:'t7', trip:'Buenos Aires — Ene 2026', dates:'5–25 ene', total:1617000, items:[{desc:'Vuelo LATAM',amt:326523},{desc:'HolaFly SIM',amt:42667},{desc:'Comidas y restaurantes',amt:553832},{desc:'Didi BA x20+',amt:387374},{desc:'Material trabajo',amt:307041}]},
+  { id:'t8', trip:'Buenos Aires — Feb 2026', dates:'25–30 ene', total:28478, items:[{desc:'Didi BA',amt:22478},{desc:'Comidas',amt:10585}]},
+];
+
+function renderDidi() {
+  const statuses = data.diditripStatus||[];
+  const getStatus = id => statuses.find(t=>t.id===id)||{ received:0 };
+
+  const html = DIDI_DETAIL.map(trip => {
+    const st = getStatus(trip.id);
+    const pending = trip.total - (st.received||0);
+    return `<div class="report-trip">
+      <div class="report-trip-header">
+        <div>
+          <div class="report-trip-title">✈️ ${trip.trip}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">${trip.dates}</div>
+        </div>
+        <div style="text-align:right">
+          <div class="report-trip-total">${fmt(trip.total)}</div>
+          <div style="margin-top:4px">${pending>0?`<span class="pending-badge">⏳ pend. ${fmtShort(pending)}</span>`:`<span class="received-badge">✓ cobrado</span>`}</div>
+        </div>
+      </div>
+      ${trip.items.map(i=>`<div class="report-item"><span>${i.desc}</span><span>${fmt(i.amt)}</span></div>`).join('')}
+    </div>`;
+  }).join('');
+
+  const grandTotal = DIDI_DETAIL.reduce((s,t)=>s+t.total,0);
+  const totalReceived = statuses.reduce((s,t)=>s+(t.received||0),0);
+  document.getElementById('didi-trips').innerHTML = html + `
+    <div class="card card-accent-green" style="margin-top:4px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;font-weight:600">Total histórico</div>
+        <div style="font-family:var(--font-mono);font-size:20px;color:var(--green)">${fmt(grandTotal)}</div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:12px">
+        <span style="color:var(--muted)">Recibido</span>
+        <span style="font-family:var(--font-mono);color:var(--teal)">${fmt(totalReceived)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-top:4px">
+        <span style="color:var(--muted)">Pendiente</span>
+        <span style="font-family:var(--font-mono);color:var(--amber)">${fmt(grandTotal-totalReceived)}</span>
+      </div>
+    </div>`;
+}
+
+function copyDidiReport() {
+  let text = 'REPORTE REEMBOLSO DIDI — YEN WEE PAEZ\n' + '='.repeat(40) + '\n\n';
+  DIDI_DETAIL.forEach(trip => {
+    text += `${trip.trip} (${trip.dates})\n`;
+    trip.items.forEach(i => text += `  · ${i.desc}: ${fmt(i.amt)}\n`);
+    text += `  SUBTOTAL: ${fmt(trip.total)}\n\n`;
+  });
+  text += `TOTAL GENERAL: ${fmt(DIDI_DETAIL.reduce((s,t)=>s+t.total,0))}\n`;
+  navigator.clipboard.writeText(text).then(()=>alert('Copiado al portapapeles ✓'));
+}
+
+// ═══════════════════════════════════════
+// SETTINGS
+// ═══════════════════════════════════════
+function renderSettings() {
+  const s = data.settings||DEFAULT_SETTINGS;
+  document.getElementById('set-income').value = s.income||3500000;
+  document.getElementById('set-savings-goal').value = s.savingsGoal||500000;
+  const budgets = s.budgets||DEFAULT_SETTINGS.budgets;
+  document.getElementById('budget-settings').innerHTML = Object.entries(budgets).map(([key,b])=>`
+    <div class="budget-row">
+      <div class="budget-label">${b.icon} ${b.label}</div>
+      <input class="budget-input" value="${b.amount}" onchange="updateBudget('${key}',this.value)">
+    </div>`).join('');
+  const subs = data.subs||[];
+  document.getElementById('subs-settings').innerHTML = subs.map((s,i)=>`
+    <div class="budget-row">
+      <div class="budget-label" style="flex:1">${s.name}<div style="font-size:10px;color:var(--muted)">día ${s.day}</div></div>
+      <input class="budget-input" value="${s.amount}" style="width:90px" onchange="updateSub(${i},this.value)">
+      <div onclick="removeSub(${i})" style="cursor:pointer;color:var(--red);margin-left:8px;font-size:20px;padding:4px">×</div>
+    </div>`).join('');
+}
+
+function saveSettings() {
+  if (!data.settings) data.settings = { ...DEFAULT_SETTINGS };
+  data.settings.income = parseInt(document.getElementById('set-income').value)||3500000;
+  data.settings.savingsGoal = parseInt(document.getElementById('set-savings-goal').value)||500000;
+  saveData();
+}
+function updateBudget(key,val) {
+  if (!data.settings?.budgets) data.settings.budgets = { ...DEFAULT_SETTINGS.budgets };
+  data.settings.budgets[key].amount = parseInt(val)||0;
+  saveData();
+}
+function updateSub(i,val) { data.subs[i].amount=parseInt(val)||0; saveData(); }
+function removeSub(i) {
+  if (confirm(`¿Eliminar ${data.subs[i].name}?`)) { data.subs.splice(i,1); saveData(); renderSettings(); }
+}
+function addSubModal() {
+  const name = prompt('Nombre:'); if (!name) return;
+  const amount = parseInt(prompt('Monto mensual CLP:')||'0');
+  const day = parseInt(prompt('Día del cobro (1-31):')||'1');
+  data.subs.push({ id:'s'+Date.now(), name, amount, day, currency:'CLP' });
+  saveData(); renderSettings(); renderSubs();
+}
+
+// ═══════════════════════════════════════
+// MODALS
+// ═══════════════════════════════════════
+function openAddModal() {
+  document.getElementById('add-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('add-desc').value=''; document.getElementById('add-amount').value='';
+  document.getElementById('add-modal').classList.add('open');
+}
+
+function openIncomeModal() {
+  document.getElementById('inc-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('inc-desc').value=''; document.getElementById('inc-amount').value='';
+  // Populate trip select
+  const sel = document.getElementById('inc-trip');
+  sel.innerHTML = (data.diditripStatus||[]).filter(t=>t.total-t.received>0).map(t=>
+    `<option value="${t.id}">${t.trip} (pendiente ${fmt(t.total-t.received)})</option>`
+  ).join('');
+  document.getElementById('inc-type').onchange = function() {
+    document.getElementById('inc-trip-group').style.display = this.value==='reembolso-didi' ? 'block' : 'none';
+  };
+  document.getElementById('income-modal').classList.add('open');
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function addTransaction() {
+  const desc=document.getElementById('add-desc').value.trim();
+  const amount=parseInt(document.getElementById('add-amount').value);
+  const date=document.getElementById('add-date').value;
+  const category=document.getElementById('add-category').value;
+  const type=document.getElementById('add-type').value;
+  if (!desc||!amount||!date) { alert('Completa todos los campos'); return; }
+  data.transactions.push({ id:'t'+Date.now(), desc, amount, date, category, type });
+  saveData(); closeModal('add-modal');
+  if (currentView==='home') renderHome();
+  if (currentView==='gastos') renderGastos();
+}
+
+function addIncome() {
+  const desc=document.getElementById('inc-desc').value.trim();
+  const amount=parseInt(document.getElementById('inc-amount').value);
+  const date=document.getElementById('inc-date').value;
+  const type=document.getElementById('inc-type').value;
+  if (!desc||!amount||!date) { alert('Completa todos los campos'); return; }
+  const income = { id:'i'+Date.now(), desc, amount, date, type };
+  // If reembolso DiDi, update trip status
+  if (type==='reembolso-didi') {
+    const tripId=document.getElementById('inc-trip').value;
+    if (tripId) {
+      income.tripId=tripId;
+      const trip=data.diditripStatus.find(t=>t.id===tripId);
+      if (trip) trip.received = Math.min(trip.total,(trip.received||0)+amount);
+    }
+  }
+  data.incomes.push(income);
+  saveData(); closeModal('income-modal');
+  if (currentView==='home') renderHome();
+  if (currentView==='ingresos') renderIngresos();
+}
+
+// ═══════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════
+function exportData() {
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='yen-finanzas-backup.json'; a.click();
+}
+function resetData() { data=loadData(); saveData(); renderHome(); alert('Datos reseteados'); }
+
+// ═══════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════
+const now = new Date();
+document.getElementById('topbar-month').textContent =
+  now.toLocaleDateString('es-CL',{month:'long',year:'numeric'}).replace(/^\w/,c=>c.toUpperCase());
+
+renderHome();
+</script>
+</body>
+</html>
