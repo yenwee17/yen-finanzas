@@ -419,6 +419,7 @@ async function syncNow() {
 
     setSyncStatus('ok', `actualizado ${formatTime(state.lastSync)}`);
     renderCurrentView();
+    if(currentView==='dashboard') renderDashboard();
 
   } catch(e) {
     console.error('Sync error:', e);
@@ -854,7 +855,7 @@ function renderDashboard() {
 
   const exps = getGastosByMonth(dashMonth);
   const prevM = getPrevMonth(dashMonth);
-  const prevExps = getGastosByMonth(prevM);
+  const prevExps = (state.gastos||[]).filter(e => normalizeDate(e.date).startsWith(prevM));
 
   const total = exps.reduce((t,e)=>t+e.amount, 0);
   const prevTotal = prevExps.reduce((t,e)=>t+e.amount, 0);
