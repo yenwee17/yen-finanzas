@@ -364,6 +364,18 @@ const DEFAULT_SUBS = [
 ];
 
 // ═══════════════════════════════════════
+// GLOBAL UTILS (must be first)
+// ═══════════════════════════════════════
+function nDate(d) {
+  if (!d) return '';
+  const s = String(d);
+  if (s.includes('T')) return s.split('T')[0];
+  if (d instanceof Date) return d.toISOString().split('T')[0];
+  return s;
+}
+function normalizeDate(d) { return nDate(d); }
+
+// ═══════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════
 let state = {
@@ -480,17 +492,8 @@ const today    = () => new Date().toISOString().split('T')[0];
 const curYM    = () => { const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; };
 const formatTime = d => d.toLocaleTimeString('es-CL', { hour:'2-digit', minute:'2-digit' });
 
-function normalizeDate(d) {
-  if (!d) return '';
-  const s = String(d);
-  // Handle ISO format: 2026-03-11T03:00:00.000Z
-  if (s.includes('T')) return s.split('T')[0];
-  // Handle Date objects from Sheets
-  if (d instanceof Date) return d.toISOString().split('T')[0];
-  return s;
-}
-function getGastosByMonth(m)   { return state.gastos.filter(e => normalizeDate(e.date).startsWith(m)); }
-function getIngresosByMonth(m) { return state.ingresos.filter(i => normalizeDate(i.date).startsWith(m)); }
+function getGastosByMonth(m)   { return state.gastos.filter(e => nDate(e.date).startsWith(m)); }
+function getIngresosByMonth(m) { return state.ingresos.filter(i => nDate(i.date).startsWith(m)); }
 
 function catBadge(cat) {
   const c = CATS[cat] || CATS.otro;
@@ -511,7 +514,7 @@ function txRow(item, isIncome) {
     <div class="tx-icon">${icon}</div>
     <div class="tx-info">
       <div class="tx-desc">${item.desc}</div>
-      <div class="tx-meta">${normalizeDate(item.date)} ${badge} ${autoBadge}</div>
+      <div class="tx-meta">${nDate(item.date)} ${badge} ${autoBadge}</div>
     </div>
     <div class="tx-amount ${amtC}">${sign}${fmt(item.amount)}</div>
   </div>`;
@@ -851,11 +854,11 @@ let drilldownCat = null;
 
 function renderDashboard() {
   renderMonthPills('dash-month-pills', dashMonth, m=>{ dashMonth=m; renderDashboard(); });
-  document.getElementById('dash-month-pills').style.cssText='display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;margin-bottom:8px';
+
 
   const exps = getGastosByMonth(dashMonth);
   const prevM = getPrevMonth(dashMonth);
-  const prevExps = (state.gastos||[]).filter(e => normalizeDate(e.date).startsWith(prevM));
+  const prevExps = (state.gastos||[]).filter(e => nDate(e.date).startsWith(prevM));
 
   const total = exps.reduce((t,e)=>t+e.amount, 0);
   const prevTotal = prevExps.reduce((t,e)=>t+e.amount, 0);
