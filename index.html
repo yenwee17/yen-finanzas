@@ -841,6 +841,7 @@ let drilldownCat = null;
 
 function renderDashboard() {
   renderMonthPills('dash-month-pills', dashMonth, m=>{ dashMonth=m; renderDashboard(); });
+  document.getElementById('dash-month-pills').style.cssText='display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none;margin-bottom:8px';
 
   const exps = getGastosByMonth(dashMonth);
   const prevM = getPrevMonth(dashMonth);
