@@ -119,6 +119,9 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
 .edit-cat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
 .edit-cat-btn{padding:10px;border-radius:10px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-family:var(--font-display);font-size:13px;cursor:pointer;text-align:center;transition:all 0.15s}
 .edit-cat-btn.active{border-color:var(--green);background:var(--green-dim);color:var(--green);font-weight:600}
+.color-amber{background:var(--amber)}.color-blue{background:var(--blue)}.color-teal{background:var(--teal)}
+.color-purple{background:var(--purple)}.color-green{background:var(--green)}.color-red{background:var(--red)}
+.color-otro{background:var(--muted)}
 </style>
 </head>
 <body>
@@ -184,6 +187,26 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
       <div class="card" id="g-list"></div>
     </div>
 
+    <!-- DASHBOARD -->
+    <div class="view" id="view-dashboard">
+      <div class="section-title" style="margin-top:12px">Gastos por categoría</div>
+      <div class="grid2" id="dash-period-selector" style="margin-bottom:12px">
+        <div id="dash-month-pills" class="month-pills" style="grid-column:1/-1"></div>
+      </div>
+      <div class="grid2">
+        <div class="stat"><div class="stat-label">Total mes</div><div class="stat-value" id="dash-total">$0</div></div>
+        <div class="stat"><div class="stat-label">vs mes anterior</div><div class="stat-value" id="dash-vs-prev">—</div><div class="stat-sub" id="dash-vs-prev-sub"></div></div>
+      </div>
+      <div class="card" id="dash-categories"></div>
+      <div id="dash-drilldown" style="display:none">
+        <div style="display:flex;align-items:center;gap:8px;margin:16px 0 10px">
+          <button onclick="closeDrilldown()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:0">←</button>
+          <div class="section-title" style="margin:0" id="drilldown-title"></div>
+        </div>
+        <div class="card" id="drilldown-list"></div>
+      </div>
+    </div>
+
     <!-- SETTINGS -->
     <div class="view" id="view-settings">
       <div class="section-title" style="margin-top:12px">Conexión</div>
@@ -217,6 +240,7 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
     <div class="nav-item active" id="nav-home" onclick="showView('home')"><div class="nav-icon">◈</div><div class="nav-label">Inicio</div></div>
     <div class="nav-item" id="nav-ingresos" onclick="showView('ingresos')"><div class="nav-icon">↑</div><div class="nav-label">Ingresos</div></div>
     <div class="nav-item" id="nav-gastos" onclick="showView('gastos')"><div class="nav-icon">◎</div><div class="nav-label">Gastos</div></div>
+    <div class="nav-item" id="nav-dashboard" onclick="showView('dashboard')"><div class="nav-icon">◫</div><div class="nav-label">Dashboard</div></div>
     <div class="nav-item" id="nav-settings" onclick="showView('settings')"><div class="nav-icon">⚙</div><div class="nav-label">Config</div></div>
   </nav>
 </div>
@@ -759,6 +783,8 @@ function editTx(id, isIncome) {
     </div>`;
   }
 
+  html += `<button onclick="deleteTx('${id}',${isIncome})" style="width:100%;margin-top:16px;padding:12px;border-radius:12px;border:1px solid rgba(255,85,102,0.3);background:var(--red-dim);color:var(--red);font-family:var(--font-display);font-size:14px;font-weight:600;cursor:pointer">🗑 Eliminar movimiento</button>`;
+
   document.getElementById('edit-content').innerHTML = html;
   openModal('modal-edit');
 }
@@ -789,6 +815,168 @@ function renderMonthPills(containerId, selected, onSelect) {
 
 function openModal(id)  { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ═══════════════════════════════════════
+// DELETE TX
+// ═══════════════════════════════════════
+async function deleteTx(id, isIncome) {
+  if (!confirm('¿Eliminar este movimiento? Se borrará del Sheet también.')) return;
+  // Remove from local state
+  if (isIncome) state.ingresos = state.ingresos.filter(i=>i.id!==id);
+  else state.gastos = state.gastos.filter(e=>e.id!==id);
+  closeModal('modal-edit');
+  // Delete from Sheet via Apps Script
+  try {
+    const sheet = isIncome ? 'Ingresos' : 'Gastos';
+    await fetch(`${APPS_SCRIPT_URL}?action=deleteRow&id=${id}&sheet=${sheet}`);
+  } catch(e) { console.error('Error deleting:', e); }
+  renderCurrentView();
+}
+
+// ═══════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════
+let dashMonth = curYM();
+let drilldownCat = null;
+
+function renderDashboard() {
+  renderMonthPills('dash-month-pills', dashMonth, m=>{ dashMonth=m; renderDashboard(); });
+
+  const exps = getGastosByMonth(dashMonth);
+  const prevM = getPrevMonth(dashMonth);
+  const prevExps = getGastosByMonth(prevM);
+
+  const total = exps.reduce((t,e)=>t+e.amount, 0);
+  const prevTotal = prevExps.reduce((t,e)=>t+e.amount, 0);
+
+  document.getElementById('dash-total').textContent = fmt(total);
+
+  // vs prev month
+  const vsEl = document.getElementById('dash-vs-prev');
+  const vsSubEl = document.getElementById('dash-vs-prev-sub');
+  if (prevTotal > 0) {
+    const diff = ((total - prevTotal) / prevTotal * 100);
+    const sign = diff >= 0 ? '+' : '';
+    vsEl.textContent = `${sign}${Math.round(diff)}%`;
+    vsEl.className = 'stat-value ' + (diff > 0 ? 'negative' : 'positive');
+    vsSubEl.textContent = `vs ${fmt(prevTotal)} mes anterior`;
+  } else {
+    vsEl.textContent = '—';
+    vsEl.className = 'stat-value';
+    vsSubEl.textContent = 'sin datos mes anterior';
+  }
+
+  // Group by category
+  const byCat = {};
+  exps.forEach(e => {
+    if (!byCat[e.cat]) byCat[e.cat] = { amount:0, items:[] };
+    byCat[e.cat].amount += e.amount;
+    byCat[e.cat].items.push(e);
+  });
+
+  const sorted = Object.entries(byCat).sort((a,b)=>b[1].amount-a[1].amount);
+  const maxAmt = sorted[0]?.[1].amount || 1;
+
+  // vs prev month by cat
+  const prevByCat = {};
+  prevExps.forEach(e => {
+    if (!prevByCat[e.cat]) prevByCat[e.cat] = 0;
+    prevByCat[e.cat] += e.amount;
+  });
+
+  if (sorted.length === 0) {
+    document.getElementById('dash-categories').innerHTML =
+      `<div style="text-align:center;color:var(--muted);padding:24px;font-size:13px">Sin gastos este mes.</div>`;
+    return;
+  }
+
+  let html = '';
+  sorted.forEach(([cat, data]) => {
+    const c = CATS[cat] || CATS.otro;
+    const pct = Math.round(data.amount / total * 100);
+    const barW = Math.round(data.amount / maxAmt * 100);
+    const prev = prevByCat[cat] || 0;
+    let varHtml = '';
+    if (prev > 0) {
+      const v = Math.round((data.amount - prev) / prev * 100);
+      const col = v > 0 ? 'var(--red)' : 'var(--green)';
+      varHtml = `<span style="font-size:11px;color:${col};margin-left:6px">${v>0?'+':''}${v}%</span>`;
+    }
+
+    html += `<div style="margin-bottom:16px;cursor:pointer" onclick="openDrilldown('${cat}')">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:15px">${c.icon}</span>
+          <span style="font-size:13px;font-weight:500">${c.label}</span>
+          ${varHtml}
+        </div>
+        <div style="text-align:right">
+          <span style="font-family:var(--font-mono);font-size:13px">${fmt(data.amount)}</span>
+          <span style="font-size:11px;color:var(--muted);margin-left:6px">${pct}%</span>
+        </div>
+      </div>
+      <div style="height:6px;background:var(--surface3);border-radius:3px;overflow:hidden">
+        <div style="height:100%;width:${barW}%;background:var(--color-${c.color});border-radius:3px;transition:width 0.4s ease"></div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:3px">${data.items.length} movimiento${data.items.length>1?'s':''} · toca para ver desglose</div>
+    </div>`;
+  });
+
+  document.getElementById('dash-categories').innerHTML = html;
+  document.getElementById('dash-drilldown').style.display = 'none';
+}
+
+function getPrevMonth(ym) {
+  const [y,m] = ym.split('-').map(Number);
+  const d = new Date(y, m-2, 1);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+
+function openDrilldown(cat) {
+  const exps = getGastosByMonth(dashMonth).filter(e=>e.cat===cat);
+  const c = CATS[cat] || CATS.otro;
+  const total = exps.reduce((t,e)=>t+e.amount, 0);
+
+  // Group by merchant (desc)
+  const byMerch = {};
+  exps.forEach(e => {
+    const key = e.desc;
+    if (!byMerch[key]) byMerch[key] = 0;
+    byMerch[key] += e.amount;
+  });
+
+  const sorted = Object.entries(byMerch).sort((a,b)=>b[1]-a[1]);
+  const maxAmt = sorted[0]?.[1] || 1;
+
+  document.getElementById('drilldown-title').textContent = `${c.icon} ${c.label}`;
+
+  let html = '';
+  sorted.forEach(([desc, amt]) => {
+    const share = Math.round(amt / total * 100);
+    const barW  = Math.round(amt / maxAmt * 100);
+    html += `<div style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+        <span style="font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:65%">${desc}</span>
+        <div style="text-align:right;flex-shrink:0">
+          <span style="font-family:var(--font-mono);font-size:13px">${fmt(amt)}</span>
+          <span style="font-size:11px;color:var(--muted);margin-left:4px">${share}%</span>
+        </div>
+      </div>
+      <div style="height:4px;background:var(--surface3);border-radius:2px;overflow:hidden">
+        <div style="height:100%;width:${barW}%;background:var(--b-${cat});border-radius:2px"></div>
+      </div>
+    </div>`;
+  });
+
+  document.getElementById('drilldown-list').innerHTML = html || '<div style="color:var(--muted);font-size:13px;padding:12px 0">Sin movimientos</div>';
+  document.getElementById('dash-drilldown').style.display = 'block';
+  document.getElementById('dash-categories').style.display = 'none';
+}
+
+function closeDrilldown() {
+  document.getElementById('dash-drilldown').style.display = 'none';
+  document.getElementById('dash-categories').style.display = 'block';
+}
 
 // ═══════════════════════════════════════
 // INIT
