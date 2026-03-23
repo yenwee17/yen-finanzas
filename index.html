@@ -617,7 +617,11 @@ function renderHome() {
   const all = [
     ...exps.map(e=>({...e,_inc:false})),
     ...incs.map(i=>({...i,_inc:true}))
-  ].sort((a,b) => String(b.date).localeCompare(String(a.date))).slice(0,6);
+  ].sort((a,b) => {
+    const dateDiff = String(nDate(b.date)).localeCompare(String(nDate(a.date)));
+    if (dateDiff !== 0) return dateDiff;
+    return String(b.id).localeCompare(String(a.id));
+  }).slice(0,6);
 
   document.getElementById('h-recent').innerHTML = all.length===0
     ? `<div style="text-align:center;color:var(--muted);padding:24px;font-size:13px">Sin movimientos este mes.<br>Los correos del banco aparecerán aquí automáticamente.</div>`
@@ -637,7 +641,11 @@ function renderIngresos() {
   document.getElementById('i-reimb').textContent  = fmt(reimb);
   document.getElementById('i-otros').textContent  = fmt(otros);
   renderMonthPills('i-months', selIngMonth, m=>{ selIngMonth=m; renderIngresos(); });
-  const sorted = [...incs].sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+  const sorted = [...incs].sort((a,b)=>{
+    const dateDiff = String(nDate(b.date)).localeCompare(String(nDate(a.date)));
+    if (dateDiff !== 0) return dateDiff;
+    return String(b.id).localeCompare(String(a.id));
+  });
   document.getElementById('i-list').innerHTML = sorted.length===0
     ? `<div style="text-align:center;color:var(--muted);padding:24px;font-size:13px">Sin ingresos. Toca ↑ para agregar.</div>`
     : sorted.map(i=>txRow(i,true)).join('');
@@ -654,7 +662,11 @@ function renderGastos() {
   const didi  = exps.filter(e=>e.cat==='didi').reduce((t,e)=>t+e.amount, 0);
   document.getElementById('g-total').textContent = fmt(total);
   document.getElementById('g-didi').textContent  = fmt(didi);
-  const sorted = [...exps].sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+  const sorted = [...exps].sort((a,b)=>{
+    const dateDiff = String(nDate(b.date)).localeCompare(String(nDate(a.date)));
+    if (dateDiff !== 0) return dateDiff;
+    return String(b.id).localeCompare(String(a.id));
+  });
   document.getElementById('g-list').innerHTML = sorted.length===0
     ? `<div style="text-align:center;color:var(--muted);padding:24px;font-size:13px">Sin gastos este período.</div>`
     : sorted.map(e=>txRow(e,false)).join('');
